@@ -1,0 +1,41 @@
+<html>
+<head>
+    {{ fontawesome_html() }}
+    <title>Register</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/form_css.css') }}">
+    <style>
+    </style>
+</head>
+<body>
+
+<div class="testbox">
+    <h1>Registration</h1>
+
+    <form action="/connect" method="post">
+        <hr>
+        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry
+        </p>
+        <hr>
+        <label id="icon"><i class="icon-envelope "><span class="fas fa-wifi "></span></i></label>
+        <select name="ssid" class="dropdown" required="required">
+            <option selected disabled value="">Choose your SSID</option>
+            {% for each in dropdown_list %}
+            <option value="{{each}}">{{each}}</option>
+            {% endfor %}
+        </select>
+        <label id="icon" for="ssidpsk"><i class="icon-user"></i><span class="fas fa-key"></span></label>
+        <input type="password" name="ssidpsk" id="ssidpsk" placeholder="SSID Password" minlength="8" required/>
+        <label id="icon" for="owner"><i class="icon-shield"></i><span class="fas fa-user"></span></label>
+        <input type="text" name="owner" id="owner" placeholder="Username" required/>
+        <label id="icon" for="cam_name"><i class="icon-shield"></i><span class="fas fa-camera"></span></label>
+        <input type="text" name="cam_name" id="cam_name" placeholder="cam_name" style="margin-bottom: 25px;" required/>
+
+        <p>By clicking Register, you agree on our <a href="#">terms and condition</a>.</p>
+
+        <input type="submit" value="Register" class="fsSubmitButton">
+        <!--        <a href="#" type="submit" class="button">Register</a>-->
+    </form>
+</div>
+
+</body>
+</html>

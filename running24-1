@@ -1,0 +1,474 @@
+import cv2
+import cognitive_face as CF
+import numpy as np
+from termcolor import colored, cprint
+import os, os.path
+from threading import Thread
+import threading
+import time
+from time import sleep
+from threading import Timer
+from PIL import Image, ImageDraw
+import datetime
+from datetime import time
+
+count_azure = 0
+count_img = 0
+count_img_crop = 0
+info_azure = []
+cascPath = "C:\opencv-master\data\haarcascades_cuda\haarcascade_frontalface_default.xml"
+
+font = cv2.FONT_HERSHEY_SIMPLEX
+SUBSCRIPTION_KEY = 'db816427ef814612975b8cb5479d3c8c'
+BASE_URL = 'https://southeastasia.api.cognitive.microsoft.com/face/v1.0'
+CF.BaseUrl.set(BASE_URL)
+CF.Key.set(SUBSCRIPTION_KEY)
+
+
+
+def azure_camera():
+    global count_img
+    global cascPath
+    print("Starting...")
+    MAX_CHECK_FRAME = 3
+    width = 480
+    height = 640
+    allArrLastFound = 0
+    currentFound = 0
+
+    cap = cv2.VideoCapture(0)
+    cap.set(3, width)  # set Width
+    cap.set(4, height)  # set Height
+
+
+    # Create the haar cascade
+    faceCascade = cv2.CascadeClassifier(cascPath)
+
+    cap = cv2.VideoCapture(0)
+
+    frameCount = -1
+    frameArr = [None] * MAX_CHECK_FRAME
+    faceFoundArr = [None] * MAX_CHECK_FRAME
+    confirmFound = 0
+    allArrLastFound = 0
+    frame_count_img = 0
+
+    while (True):
+        # sleep(0.45)
+        ret, frame = cap.read()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+
+
+
+
+        faces = faceCascade.detectMultiScale(
+            gray,
+            scaleFactor=1.1,
+            minNeighbors=5,
+            minSize=(60, 60),
+            flags=0
+        )
+        for (x, y, w, h) in faces:
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            # print(str(x) + ' ' + str(y) + ' ' + str(x + y) + ' ' + str(y + h))
+
+
+        frame_count_img += 1
+        if frame_count_img == 1 or frame_count_img == 17 or frame_count_img == 33:
+
+            frameCount += 1
+            # print('frameCount: ' + str(frameCount))
+            frameArr[frameCount] = gray
+            if frameCount == 2:
+                frameCount = -1
+
+            if hasattr(faces, 'shape'):
+                currentFound = faces.shape[0]
+            else:
+                currentFound = 0
+
+            # print(currentFound)
+
+            faceFoundArr[frameCount] = currentFound
+
+            if len(set(faceFoundArr)) <= 1:
+                # print(len(set(faceFoundArr)))
+                confirmFound = faceFoundArr[0]
+                # print(str(faceFoundArr) + " => " + str(all(faceFoundArr)))
+                if confirmFound != allArrLastFound:
+                    if confirmFound:
+                        for (x, y, w, h) in faces:
+                            crop_img = frame[y:y + h, x:x + w]
+                            file = "D:/image/run/img" + str(count_img) + ".jpg"
+                            # file2 = "D:/image/run/" + str(count_img) + ".jpg"
+                            count_img += 1
+                            cv2.imwrite(file, crop_img)
+                            # cv2.imwrite("D:/image/test/img" + str(count_img) + ".jpg", crop_img)
+                        # cv2.imwrite(file2, frame)
+                        # print(x, y)
+                    allArrLastFound = confirmFound
+                    # print("casFound: " + str(allArrLastFound))
+
+        if frame_count_img == 33:
+            frame_count_img = 0
+
+        cv2.imshow('frame', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            cap.release()
+            cv2.destroyAllWindows()
+            break
+    # When everything done, release the capture
+    return
+
+def azure_camera_2():  #baseline
+    global count_img
+    global cascPath
+    print("Starting...")
+    MAX_CHECK_FRAME = 3
+    width = 480
+    height = 640
+    allArrLastFound = 0
+    currentFound = 0
+
+    cap = cv2.VideoCapture(0)
+    cap.set(3, width)  # set Width
+    cap.set(4, height)  # set Height
+
+
+    # Create the haar cascade
+    faceCascade = cv2.CascadeClassifier(cascPath)
+
+    cap = cv2.VideoCapture(0)
+
+    frameCount = -1
+    frameArr = [None] * MAX_CHECK_FRAME
+    faceFoundArr = [None] * MAX_CHECK_FRAME
+    confirmFound = 0
+    allArrLastFound = 0
+    frame_count_img = 0
+
+    while (True):
+        # sleep(0.45)
+        ret, frame = cap.read()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+
+
+
+
+        faces = faceCascade.detectMultiScale(
+            gray,
+            scaleFactor=1.1,
+            minNeighbors=5,
+            minSize=(60, 60),
+            flags=0
+        )
+        for (x, y, w, h) in faces:
+            if x > 200 and x + w < 450:
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            # print(str(x) + ' ' + str(y) + ' ' + str(x + y) + ' ' + str(y + h))
+
+
+        frame_count_img += 1
+        if frame_count_img == 1 or frame_count_img == 17 or frame_count_img == 33:
+
+            frameCount += 1
+            # print(frameCount)
+            frameArr[frameCount] = gray
+            if frameCount == 2:
+                frameCount = -1
+
+            if hasattr(faces, 'shape') and x > 200 and x+w < 450:
+                currentFound = faces.shape[0]
+            else:
+                currentFound = 0
+
+            # print(currentFound)
+
+            faceFoundArr[frameCount] = currentFound
+
+            if len(set(faceFoundArr)) <= 1:
+                # print(len(set(faceFoundArr)))
+                confirmFound = faceFoundArr[0]
+                # print(str(faceFoundArr) + " => " + str(all(faceFoundArr)))
+                if confirmFound != allArrLastFound:
+                    if confirmFound:
+                        if confirmFound:
+                            for (x, y, w, h) in faces:
+                                crop_img = frame[y:y + h, x:x + w]
+                                file = "D:/image/run/img" + str(count_img) + ".jpg"
+                                # file2 = "D:/image/run/" + str(count_img) + ".jpg"
+                                count_img += 1
+                                cv2.imwrite(file, crop_img)
+                                # cv2.imwrite("D:/image/test/img" + str(count_img) + ".jpg", crop_img)
+                            # cv2.imwrite(file2, frame)
+                            # print(x, y)
+                        allArrLastFound = confirmFound
+                        # print("casFound: " + str(allArrLastFound))
+
+        if frame_count_img == 33:
+            frame_count_img = 0
+
+
+
+        cv2.line(frame, (200, 1600), (200, 0), (0, 255, 255), 2) #left
+        cv2.line(frame, (450, 1600), (450, 0), (0, 255, 255), 2) #right
+
+        cv2.imshow('frame', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            cap.release()
+            cv2.destroyAllWindows()
+            break
+    # When everything done, release the capture
+    return
+
+class perpetualTimer():
+
+   def __init__(self, threadID, t, hFunction):
+      threading.Thread.__init__(self)
+      self.t=t
+      self.hFunction = hFunction
+      self.threadID = threadID
+      self.thread = Timer(self.t,self.handle_function)
+
+   # def __init__(self, hFunction):
+   #    threading.Thread.__init__(self)
+   #    self.daemon = True
+   #    self.hFunction()
+   #    self.thread.start()
+
+   def handle_function(self):
+      self.hFunction()
+      self.thread = Timer(self.t,self.handle_function)
+      self.thread.start()
+
+   def start(self):
+       self.thread.start()
+
+
+   def cancel(self):
+      self.thread.cancel()
+
+def crop_image():
+    global count_azure
+    global count_img_crop
+
+    path = "D:/image/x/"
+    lists = os.listdir(path)
+    number_files = len(lists)
+    images_list = []
+    for list in lists:
+        fileName = path + list
+        images_list.append(fileName)
+    # print('image list in folder run ' + str(images_list))
+
+    # images_list = ['D:/image/run/img11.jpg', 'D:/image/run/img12.jpg']
+    if len(images_list):
+        imgs = [Image.open(i) for i in images_list]  # open img
+        min_img_shape = sorted([(np.sum(i.size), i.size) for i in imgs])[0][1]  # find minsize
+        img_merge = np.hstack((np.asarray(i.resize(min_img_shape, Image.ANTIALIAS)) for i in imgs))  # resize
+        img_merge = Image.fromarray(img_merge)  # merge
+        img = 'D:/image/crop/img'+str(count_img_crop)+'.jpg'
+        img_merge.save(img)  # save
+        cprint('crop: ' + str(count_img_crop), 'blue')
+        count_img_crop += 1
+
+        [os.remove(i) for i in images_list]
+        # print('delete in folder run complete')
+
+
+
+def detection():
+    global count_azure
+    global count_img_azure
+    global info_azure
+
+    path = 'D:/image/crop/'
+    lists = os.listdir(path)
+    images_list = []
+    for l in lists:
+        fileName = path + l
+        if l:
+            # print('detecting...')
+            detection = CF.face.detect(fileName)
+            # print(detection.getcode())
+            # d = 0
+            # if not d:
+            #     cprint('sleep from detection', 'red')
+            #     sleep(60)
+            count_azure += 1
+            # cprint('azure: ' + str(count_azure), 'green')
+            detection_face_id = [d['faceId'] for d in detection]
+            if len(detection_face_id):
+                cprint('azure: ' + str(count_azure), 'green')
+                print('detection: ' + str(detection_face_id))
+                # print('len ' + str(len(info_azure)))
+                if len(info_azure) == 0:
+                    copy_detection_face_id = detection_face_id.copy()
+                    for ids in detection_face_id:
+                        for f in copy_detection_face_id:
+                            if ids != f:
+                                try:
+                                    r = CF.face.verify(f, ids)
+                                except:
+                                    cprint('sleep from verification', 'red')
+                                    sleep(60)
+                                print(ids + ' : ' + f, end='')
+                                cprint(' result: ' + str(r), 'red')
+                                if r['isIdentical']:
+                                    detection_face_id.remove(f)
+                    # detection_face_id.clear()
+                    # print(detection_face_id)
+
+                    for ids in detection_face_id:
+                        date_time = datetime.datetime.now().replace(microsecond=0)
+                        obj = IdAzure(ids, date_time, 0)
+                        info_azure.append(obj)
+
+                # for id in info_azure:
+                #     print('info_azure: ' + str(id.id))
+                else:
+                    copy_detection_face_id = detection_face_id.copy()
+                    for id in info_azure:
+                        # print(id.id)
+                        for f in copy_detection_face_id:
+                            # print(f)
+                            r = CF.face.verify(f, id.id)
+                            count_azure += 1
+                            cprint('azure: ' + str(count_azure), 'green')
+                            print(id.id + ' : ' + f, end='')
+                            cprint(' result: ' + str(r), 'red')
+
+                            now = datetime.datetime.now().replace(microsecond=0)
+                            if r['isIdentical']:
+                                diff = now - id.time
+                                minutes = diff.total_seconds()/60
+                                print('diff: ' + str(diff))
+                                print('minutes: ' + str(minutes))
+                                print('past time: ' + str(id.time))
+                                print('now time: ' + str(now))
+                                if minutes < 1:
+                                    print('if')
+                                    id.time = now
+                                    cprint('id: ' + id.id, 'yellow')
+                                    cprint('round: ' + str(id.round), 'yellow')
+
+                                else:
+                                    print('else')
+                                    id.round = id.round + 1
+                                    id.time = now
+                                    cprint('id: ' + id.id, 'yellow')
+                                    cprint('round: ' + str(id.round), 'yellow')
+
+                                # detection_face_id.remove(f)
+                                try:
+                                    detection_face_id.remove(f)
+                                except:
+                                    print('can not delete face id')
+                                # break
+
+                    if len(detection_face_id):
+                        for f in detection_face_id:
+                            now = datetime.datetime.now().replace(microsecond=0)
+                            obj = IdAzure(f, now, 0)
+                            info_azure.append(obj)
+                            print('add ' + str(f) + ' complete')
+
+                for id in info_azure:
+                    print('info_azure: ' + str(id.id))
+
+
+
+            # info_azure.append(detection)
+            # print(info_azure)
+            im = cv2.imread(fileName)
+            for face in detection:
+                for id in info_azure:
+                    if face['faceId'] == id.id:
+                        # print(face['faceId'])
+                        rec = getRectangle(face)
+                        crop_img = im[rec[0][1]:rec[1][1], rec[0][0]:rec[1][0]]
+                        cv2.imwrite('D:/image/detect/'+str(face['faceId'])+'.jpg', crop_img)
+
+            os.remove(fileName)
+            # print(detection)
+
+            # cprint('azure: ' + str(count_azure), 'green')
+            # count_azure += 1
+            # if count_azure == 5:
+            #     cprint('sleep', 'red')
+            #     count_azure = 0
+            #     sleep(10)
+
+def getRectangle(faceDictionary):
+    rect = faceDictionary['faceRectangle']
+    left = rect['left']
+    top = rect['top']
+    bottom = left + rect['height']
+    right = top + rect['width']
+    return ((left, top), (bottom, right))
+
+class IdAzure:
+    def __init__(self, id, time, round):
+        self.id = id
+        self.time = time
+        self.round = round
+
+
+# detection()
+c = perpetualTimer(1, 3, crop_image)
+d = perpetualTimer(2, 3, detection)
+c.start()
+# d.start()
+# azure_camera_2()
+
+# date_time1 = datetime.datetime.now().replace(microsecond=0)
+# test = IdAzure(123456, date_time1, 0)
+# info_azure.append(test)
+# date_time2 = datetime.datetime.now().replace(microsecond=0)
+# test = IdAzure(654321, date_time2, 0)
+# info_azure.append(test)
+# for id in info_azure:
+#     print(str(id.id) + ' + ' + str(id.time))
+
+# t = time(11, 34, 56)
+# print(t)
+
+
+
+# detect = ['fa3f6c5a-0031-45a1-8777-3c7951b3d47a', '5beb761b-9d08-4b37-b8da-8f6b1c5529f2', 'faed35d2-ad57-4eb0-864e-d935878d2f67']
+#
+# copy1 = detect.copy()
+# copy2 = copy1.copy()
+#
+# for i in copy1:
+#     for j in copy2:
+#         if i != j:
+#             # print(str(detect.index(i)))
+#             # print(str(detect.index(j)))
+#             r = CF.face.verify(i, j)
+#             print(i + ' : ' + j, end='')
+#             cprint(' result: ' + str(r), 'red')
+#             if r['isIdentical']:
+#                 copy1.remove(j)
+#                 detect.remove(j)
+#                 # for k in detect:
+#                 #     print(k)
+#                 print('...........')
+#
+# for i in detect:
+#     print(i)
+# for i in copy1:
+#     print(i)
+
+# image = cv2.imread('D:/image/pass/img3.jpg')
+# # pixel = image[50, 50]
+# pixel = image.shape
+# print(pixel)
+# pixel = image[53, 53]
+# print(pixel.shape)
+
+
